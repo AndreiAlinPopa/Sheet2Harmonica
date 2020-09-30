@@ -641,6 +641,8 @@ def merge_boxes(boxes, threshold):
 
 if __name__ == "__main__":
 
+    #Add a variable to keep count of lines
+    sheetLine = []
     #-------------------------------------------------------------------------------
     # Image Preprocessing (Blurring, Noise Removal, Binarization, Deskewing)
     #-------------------------------------------------------------------------------
@@ -1175,7 +1177,10 @@ if __name__ == "__main__":
         print("[INFO] Corrected note values after accidentals: ")
         for j in range(len(staff_primitives)):
             if (staff_primitives[j].getPrimitive() == "note"):
-                print(staff_primitives[j].getPitch(), end=", ")
+                #Somewhat sketchy code to extract a list of pure notes
+                currentNote = str(staff_primitives[j].getPitch())
+                sheetLine.append(currentNote)
+                print(currentNote)
             else:
                 print(staff_primitives[j].getPrimitive(), end=", ")
 
@@ -1197,49 +1202,54 @@ if __name__ == "__main__":
         # Add final bar in staff
         staffs[i].addBar(bar)
 
-    # -------------------------------------------------------------------------------
-    # Sequence MIDI
-    # -------------------------------------------------------------------------------
 
-    print("[INFO] Sequencing MIDI")
-    midi = MIDIFile(1)
-    track = 0
-    time = 0
-    channel = 0
-    volume = 100
-
-    midi.addTrackName(track, time, "Track")
-    midi.addTempo(track, time, 110)
-
-    for i in range(len(staffs)):
-        print("==== Staff {} ====".format(i+1))
-        bars = staffs[i].getBars()
-        for j in range(len(bars)):
-            print("--- Bar {} ---".format(j + 1))
-            primitives = bars[j].getPrimitives()
-            for k in range(len(primitives)):
-                duration = primitives[k].getDuration()
-                if (primitives[k].getPrimitive() == "note"):
-                    pitch = pitch_to_MIDI[primitives[k].getPitch()]
-                    midi.addNote(track, channel, pitch, time, duration, volume)
-                print(primitives[k].getPrimitive())
-                print(primitives[k].getPitch())
-                print(primitives[k].getDuration())
-                print("-----")
-                time += duration
-
-    # ------- Write to disk -------
-    print("[INFO] Writing MIDI to disk")
-    binfile = open("output/output.mid", 'wb')
-    midi.writeFile(binfile)
-    binfile.close()
-
-
-
-
-
-
-
-
-
-
+    # ------- Convert extracted notes to harmonica -------
+    
+    # C harmonica is C4 to C7
+    
+    harmonicaHoles = {
+    
+    'C4':'1',
+    'D4':'-1',
+    'E4':'2',
+    'F4':'2*',
+    'G4':'3',
+    'A4':'3*',
+    'B4':'-3',
+    'C5':'4',
+    'D5':'-4',
+    'E5':'5',
+    'F5':'-5',
+    'G5':'6',
+    'A5':'-6',
+    'B5':'-7',
+    'C6':'7',
+    'D6':'-8',
+    'E6':'8',
+    'F6':'-9',
+    'G6':'9',
+    'A6':'-10',
+    'B6':'10*',
+    'C7':'10'
+    
+    }
+    
+    #ORIGINAL
+    harmTab = ""
+    for notes in sheetLine:
+        tabNote = harmonicaHoles[notes]
+        harmTab = harmTab + " " + tabNote
+    print("Original tab: \n" + harmTab)
+    
+    print("\n")
+    
+    #ONE OCTAVE
+    harmTab = ""
+    for notes in sheetLine:
+        newNote = notes
+        newNote = newNote.replace("5", "6")
+        newNote = newNote.replace("4", "5")
+        newNote = newNote.replace("3", "4")
+        tabNote = harmonicaHoles[newNote]
+        harmTab = harmTab + " " + tabNote
+    print("One octave up tab: \n" + harmTab)
